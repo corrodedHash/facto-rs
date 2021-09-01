@@ -1,0 +1,35 @@
+[package]
+name = "facto"
+version = "0.1.0"
+edition = "2018"
+description = "Integer factorization and prime certification"
+keywords = [ "factorization", "prime", "uint" ]
+categories = [ "mathematics", "science", "cryptography" ]
+repository = "https://github.com/corrodedHash/facto-rs/"
+license = "MIT OR Apache-2.0"
+authors = [ "Lukas Wölfer <lukas.woelfer@rwth-aachen.de>" ]
+
+[dependencies]
+num-integer = "0.1.44"
+num-traits = "0.2.14"
+redc = "0.1.0"
+rug = "1.13.0"
+twoword = "0.1.0"
+
+[dev-dependencies]
+serde = { version = "1.0", features = [ "derive" ] }
+serde_json = "1.0"
+
+[profile.release]
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+
+[profile.bench]
+lto = "fat"
+codegen-units = 1
+
+[[bench]]
+name = "macro"
+harness = false
+path = "benches/macro/mod.rs"
