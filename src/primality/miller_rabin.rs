@@ -12,13 +12,13 @@ pub enum Result {
 }
 
 /// Implements the miller rabin compositeness test
-/// 
+///
 /// <https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test>
 pub trait MillerRabin: Sized {
     /// May return `MaybePrime` for composite numbers, 'strong probable primes'.
     ///
     /// When returning `Composite`, `self` is definitely a composite number
-    /// 
+    ///
     /// # Examples
     /// ```
     /// use facto::primality::{MillerRabin, MillerRabinCompositeResult};

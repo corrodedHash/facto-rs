@@ -8,7 +8,7 @@ use super::brent_cycle::find_cycle;
 
 /// Find factors of given number by applying Pollard's rho algorithm using Brent's cycle detection
 ///
-/// <https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm>
+/// [Wikipedia Pollards' Rho](https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm)
 pub trait PollardRho: Sized {
     /// Factorize given number
     ///
@@ -63,7 +63,6 @@ impl PollardRhoCycleConditionCheckerU64 {
     }
     fn extract(self, mut f: PollardRhoMapperU64) -> u64 {
         let mut hare = super::brent_cycle::MapFunction::run(&mut f, self.last_hare);
-        #[allow(unused_mut, unused_variables, dead_code)]
         loop {
             let x_minus_y_abs = if hare > self.last_tortoise {
                 hare - self.last_tortoise
@@ -214,7 +213,6 @@ impl PollardRhoCycleConditionCheckerRug {
         field: &<rug::Integer as Redc>::FieldType,
     ) -> rug::Integer {
         let mut hare: rug::Integer = field.redc(self.last_hare.square() + increment);
-        #[allow(unused_mut, unused_variables, dead_code)]
         loop {
             let x_minus_y_abs: rug::Integer = if hare > self.last_tortoise {
                 hare.clone() - &self.last_tortoise
@@ -235,7 +233,6 @@ impl PollardRho for u64 {
         let field = self.setup_field();
         let start = start.to_montgomery(&field);
         let constant_increment = constant_increment.to_montgomery(&field);
-        #[allow(unused_mut, unused_variables, dead_code)]
         let (e, _) = find_cycle::<_, Self, _, _>(
             PollardRhoMapperU64(constant_increment, field.clone()),
             PollardRhoCycleConditionCheckerU64::new(&field, self, start),
@@ -255,7 +252,6 @@ impl PollardRho for u128 {
         let field = self.setup_field();
         let start = start.to_montgomery(&field);
         let constant_increment = constant_increment.to_montgomery(&field);
-        #[allow(unused_mut, unused_variables, dead_code)]
         let (e, _) = find_cycle::<_, Self, _, _>(
             PollardRhoMapperU128(constant_increment, field.clone()),
             PollardRhoCycleConditionCheckerU128::new(&field, self, start),
@@ -297,7 +293,6 @@ impl PollardRho for rug::Integer {
         let field = self.clone().setup_field();
         let start = start.clone().to_montgomery(&field);
         let constant_increment = constant_increment.clone().to_montgomery(&field);
-        #[allow(unused_mut, unused_variables, dead_code)]
         let e = find_rug_cycle(
             PollardRhoCycleConditionCheckerRug::new(&field, self.clone(), start.clone()),
             start,

@@ -9,16 +9,12 @@
 //! ```
 
 #![deny(unsafe_code)]
-
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(unused)]
 #![warn(single_use_lifetimes)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
-
 #![allow(clippy::unseparated_literal_suffix)]
-
-
 
 /// Factorization algorithms for integers
 pub mod factoring;
@@ -31,7 +27,7 @@ pub use redc;
 
 pub use optimized_factoring::{
     CertifiedFactorization, EmptyFactoringEventSubscriptor, Factoring, FactoringEventSubscriptor,
-    LucasCertificate, LucasCertificateElement, Primality,
+    LucasCertificate, LucasCertificateElement, Primality, PrimalityCertainty,
 };
 
 #[doc(no_inline)]
