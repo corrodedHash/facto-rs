@@ -160,9 +160,9 @@ fn random_test_rug_smooth() {
     let mut state = get_rand_gen();
     let threshold = rug::Integer::u_pow_u(2, 35).complete();
 
-    for _ in 0..3 {
+    for _ in 0..15 {
         let mut r = rug::Integer::from(1);
-        for _ in 0..4 {
+        for _ in 0..5 {
             r *= threshold.clone().random_below(&mut state) + &threshold;
         }
         check_certified_factor(&r, 1.into());

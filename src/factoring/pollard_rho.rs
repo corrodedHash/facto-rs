@@ -158,75 +158,6 @@ impl super::brent_cycle::MapFunction<u128> for PollardRhoMapperU128 {
     }
 }
 
-struct PollardRhoCycleConditionCheckerRug {
-    field: <rug::Integer as Redc>::FieldType,
-    accum: rug::Integer,
-    n: rug::Integer,
-    last_tortoise: rug::Integer,
-    last_hare: rug::Integer,
-}
-
-impl PollardRhoCycleConditionCheckerRug {
-    #[inline]
-    fn check(
-        &mut self,
-        tortoise: &rug::Integer,
-        hare: &rug::Integer,
-        count: &rug::Integer,
-        power: &rug::Integer,
-    ) -> bool {
-        let diff = if hare > tortoise {
-            hare.clone() - tortoise
-        } else {
-            tortoise.clone() - hare
-        };
-        self.accum = self.field.redc(self.accum.clone() * diff);
-        self.last_tortoise = tortoise.clone();
-        debug_assert_eq!(power.count_ones(), Some(1));
-        let power_count = power.find_one(0).unwrap();
-
-        if (power.clone() - count).keep_bits(std::cmp::max(4, power_count / 2)) == 1 {
-            let d = self.accum.clone().to_normal(&self.field).gcd(&self.n);
-            if d != 1 {
-                return true;
-            }
-            self.last_hare = hare.clone();
-        }
-        false
-    }
-    fn new(
-        field: &<rug::Integer as Redc>::FieldType,
-        n: rug::Integer,
-        start: rug::Integer,
-    ) -> Self {
-        Self {
-            field: field.clone(),
-            accum: rug::Integer::from(1).to_montgomery_unchecked(field),
-            n,
-            last_tortoise: start.clone(),
-            last_hare: start,
-        }
-    }
-    fn extract(
-        self,
-        increment: &rug::Integer,
-        field: &<rug::Integer as Redc>::FieldType,
-    ) -> rug::Integer {
-        let mut hare: rug::Integer = field.redc(self.last_hare.square() + increment);
-        loop {
-            let x_minus_y_abs: rug::Integer = if hare > self.last_tortoise {
-                hare.clone() - &self.last_tortoise
-            } else {
-                self.last_tortoise.clone() - &hare
-            };
-            let d = x_minus_y_abs.to_normal(&self.field).gcd(&self.n);
-            if d != 1 {
-                return d;
-            }
-            hare = field.redc(hare.square() + increment);
-        }
-    }
-}
 
 impl PollardRho for u64 {
     fn pollard_rho(self, start: &Self, constant_increment: &Self) -> Option<Self> {
@@ -266,40 +197,99 @@ impl PollardRho for u128 {
     }
 }
 
+struct PollardRhoCycleConditionCheckerRug {
+    accum: rug::Integer,
+    n: rug::Integer,
+    last_tortoise: rug::Integer,
+    last_hare: rug::Integer,
+}
+
+impl PollardRhoCycleConditionCheckerRug {
+    #[inline]
+    fn check(
+        &mut self,
+        tortoise: &rug::Integer,
+        hare: &rug::Integer,
+        count: &rug::Integer,
+        power: &rug::Integer,
+    ) -> bool {
+        let diff = if hare > tortoise {
+            hare.clone() - tortoise
+        } else {
+            tortoise.clone() - hare
+        };
+        self.accum = (self.accum.clone() * &diff) % &self.n;
+        self.last_tortoise = tortoise.clone();
+        debug_assert_eq!(power.count_ones(), Some(1));
+        let power_count = power.find_one(0).unwrap();
+
+        if (power.clone() - count).keep_bits(std::cmp::max(4, power_count / 2)) == 1 {
+            let d = self.accum.clone().gcd(&self.n);
+            if d != 1 {
+                return true;
+            }
+            self.last_hare = hare.clone();
+        }
+        false
+    }
+    fn new(n: rug::Integer, start: rug::Integer) -> Self {
+        Self {
+            accum: 1.into(),
+            n,
+            last_tortoise: start.clone(),
+            last_hare: start,
+        }
+    }
+    fn extract(self, increment: &rug::Integer, modulo: &rug::Integer) -> rug::Integer {
+        let mut hare: rug::Integer = (self.last_hare.square() + increment) % modulo;
+        loop {
+            let x_minus_y_abs: rug::Integer = if hare > self.last_tortoise {
+                hare.clone() - &self.last_tortoise
+            } else {
+                self.last_tortoise.clone() - &hare
+            };
+            let d = x_minus_y_abs.gcd(&self.n);
+            if d != 1 {
+                return d;
+            }
+            hare = (hare.square() + increment) % modulo;
+        }
+    }
+}
+
 fn find_rug_cycle(
     mut cycle_condition: PollardRhoCycleConditionCheckerRug,
     start: rug::Integer,
     increment: &rug::Integer,
-    field: &<rug::Integer as Redc>::FieldType,
+    modulo: &rug::Integer,
 ) -> PollardRhoCycleConditionCheckerRug {
     let mut tortoise = start.clone();
-    let mut hare = field.redc(start.square() + increment);
-    let mut power = rug::Integer::from(1);
-    let mut count = rug::Integer::from(0);
+    let mut hare = (start.square() + increment) % modulo;
+    let mut power = 1.into();
+    let mut count = 0.into();
     while !cycle_condition.check(&tortoise, &hare, &count, &power) {
         count += 1;
         if power == count {
             tortoise = hare.clone();
             power <<= 1;
-            count = rug::Integer::from(0);
+            count = 0.into();
         }
-        hare = field.redc(hare.square() + increment);
+        hare = (hare.square() + increment) % modulo;
     }
     cycle_condition
 }
 
 impl PollardRho for rug::Integer {
     fn pollard_rho(self, start: &Self, constant_increment: &Self) -> Option<Self> {
-        let field = self.clone().setup_field();
-        let start = start.clone().to_montgomery(&field);
-        let constant_increment = constant_increment.clone().to_montgomery(&field);
+        let start = start.clone();
+        let constant_increment = constant_increment.clone();
         let e = find_rug_cycle(
-            PollardRhoCycleConditionCheckerRug::new(&field, self.clone(), start.clone()),
+            PollardRhoCycleConditionCheckerRug::new(self.clone(), start.clone()),
             start,
             &constant_increment,
-            &field,
+            &self,
         );
-        let d = e.extract(&constant_increment, &field);
+        let d = e.extract(&constant_increment, &self);
         if d == self {
             None
         } else {
