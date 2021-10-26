@@ -16,3 +16,17 @@ impl<T> facto::FactoringEventSubscriptor<T> for DottingEventSubscriptor {
 
     fn is_composite(&mut self, _n: &T) {}
 }
+
+pub fn cargo_target_directory() -> Option<std::path::PathBuf> {
+    #[derive(serde::Deserialize)]
+    struct Metadata {
+        target_directory: std::path::PathBuf,
+    }
+
+    let output = std::process::Command::new(std::env::var_os("CARGO")?)
+        .args(&["metadata", "--format-version", "1"])
+        .output()
+        .ok()?;
+    let metadata: Metadata = serde_json::from_slice(&output.stdout).ok()?;
+    Some(metadata.target_directory)
+}
