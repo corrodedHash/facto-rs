@@ -261,7 +261,7 @@ fn linear_combination(
     0
 }
 
-fn data_collection(n: u128) {
+fn data_collection(n: u128) -> u128 {
     assert_eq!(n % 2, 1);
     let quad_res_primes: Vec<_> = PrimeIterator::default()
         .filter(|x| eulers_criterion(n, *x))
@@ -322,21 +322,22 @@ fn data_collection(n: u128) {
             rug::Integer::from(old_index as u128 + sq).square() - n,
         ));
     }
+    for (x,y) in &xy{
+        println!("{} {}", x.to_normal(), y);
+    }
     dbg!(hit_count);
-    // dbg!(&matrix);
-    // dbg!(&xy);
     dbg!(linear_combination(
         n,
         &mut matrix,
         &mut xy,
         quad_res_primes.len()
-    ));
+    ))
 }
 
 #[test]
 fn bla() {
     // data_collection(15347);
-    data_collection(85070591730234614113402964855534653469)
+    data_collection(85_070_591_730_234_614_113_402_964_855_534_653_469);
 }
 
 impl QuadraticSieve for u128 {
