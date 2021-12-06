@@ -21,7 +21,7 @@ pub trait LucasPrimality: Sized {
     /// # Arguments
     /// * `self`: Number to be checked for primality
     /// * `n_minus_1_unique_prime_factors`: Prime factorization of `self` - 1
-    /// * `base`: Base used to test `self`. Even if `self` is prime, not all bases are going to return [`LucasPrimalityResult`]::Prime, multiple bases may need to be tested
+    /// * `base`: Base used to test `self`. Even if `self` is prime, not all bases are going to return [`LucasPrimalityResult`]`::Prime`, multiple bases may need to be tested
     fn lucas_primality_test(
         self,
         n_minus_1_unique_prime_factors: &[Self],

@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+
+//! [Paper on self-initializing quadratic sieve](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.26.6924)
+
 use crate::{factoring::PollardRho, util::NumUtil};
 use redc::{element::Element, Redc};
 
@@ -79,8 +82,6 @@ fn linear_combination(
 }
 
 fn get_log_approximations(sieve_size: usize, n: u128, primes: &[u32]) -> (Vec<u8>, u128) {
-    use std::convert::TryFrom;
-
     let mut log_approximation = vec![0u8; sieve_size];
     let ceil_sq = n.integer_square_root() + 1;
     let try_count_log_underapproximation = usize::MAX.trailing_ones() - sieve_size.trailing_zeros();
@@ -121,8 +122,6 @@ fn gather_relations(
     sieve_size: usize,
     primes: &[u32],
 ) -> Vec<(u128, rug::Integer, BitVector)> {
-    use std::convert::TryFrom;
-
     let (log_approximation, ceil_sq) = get_log_approximations(sieve_size, n, primes);
 
     let mut last_log_approx = 0u8;

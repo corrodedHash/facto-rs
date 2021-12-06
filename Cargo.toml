@@ -1,7 +1,7 @@
 [package]
 name = "facto"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 description = "Integer factorization and prime certification"
 keywords = [ "factorization", "prime", "uint" ]
 categories = [ "mathematics", "science", "cryptography" ]
