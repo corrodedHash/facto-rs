@@ -109,48 +109,146 @@ pub fn prime_mod_sqrt(square: u128, prime: u128) -> u128 {
     tonelli_shanks(square, prime)
 }
 
-pub fn binary_power_mod_sqrt(square: u128, exponent: u32) -> Vec<u128> {
-    debug_assert!(is_prime_power_mod_res(square, 2, exponent as u32));
-    if square == 0 {
-        return vec![0];
+pub mod modulo_square_root {
+    use redc::{element::Element, Redc};
+
+    use super::prime_mod_sqrt;
+
+    pub struct BinaryModulo {
+        square: u128,
+        current_power: u128,
+        last_roots: Vec<u128>,
     }
-    match exponent {
-        0 => vec![0],
-        1 => vec![square % 2],
-        _ => {
-            let bit = if square % 4 == 0 { 0 } else { 1 };
-            let mut result = vec![bit, 2u128 + bit];
-            for current_exponent in 2..=exponent {
-                let round_mod = 1 << current_exponent;
-                let round_square = square % round_mod;
-                result = result
-                    .into_iter()
-                    .flat_map(|x| [x, x.wrapping_add(1 << (current_exponent - 1)) % round_mod])
-                    .filter(|x| x.wrapping_mul(*x) % round_mod == round_square)
-                    .collect();
-                result.sort_unstable();
-                result.dedup();
+
+    impl BinaryModulo {
+        pub fn new(square: u128) -> Self {
+            Self {
+                square,
+                current_power: 1,
+                last_roots: vec![],
             }
-            result
+        }
+    }
+
+    impl std::iter::Iterator for BinaryModulo {
+        type Item = Vec<u128>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.current_power == 1 {
+                self.current_power = 2;
+                self.last_roots = vec![self.square % 2];
+                return Some(self.last_roots.clone());
+            } else if self.current_power == 2 {
+                self.current_power = 4;
+                let bit = if self.square % 4 == 0 { 0 } else { 1 };
+                self.last_roots = vec![bit, 2u128 + bit];
+                return Some(self.last_roots.clone());
+            }
+
+            self.current_power *= 2;
+            let round_square = self.square % self.current_power;
+
+            self.last_roots = self
+                .last_roots
+                .clone()
+                .into_iter()
+                .flat_map(|x| {
+                    [
+                        x,
+                        x.wrapping_add(self.current_power / 2) % self.current_power,
+                    ]
+                })
+                .filter(|x| x.wrapping_mul(*x) % self.current_power == round_square)
+                .collect();
+
+            self.last_roots.sort_unstable();
+            self.last_roots.dedup();
+            Some(self.last_roots.clone())
+        }
+    }
+
+    pub struct OddPrime {
+        square: u128,
+        modulo: u128,
+        current_power: u128,
+        last_root: u128,
+    }
+
+    impl OddPrime {
+        pub fn new(square: u128, modulo: u128) -> Self {
+            Self {
+                square,
+                modulo,
+                current_power: 1,
+                last_root: 0,
+            }
+        }
+    }
+
+    impl std::iter::Iterator for OddPrime {
+        type Item = u128;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.current_power == 1 {
+                self.current_power = self.modulo;
+                self.last_root = prime_mod_sqrt(self.square, self.modulo);
+                return Some(self.last_root);
+            }
+
+            self.current_power = self.current_power.checked_mul(self.modulo)?;
+
+            let field = self.current_power.setup_field();
+
+            // Taylor series
+            // f(r_k + tp^k) = f(r_k) + (-tp^k) * f'(r_k) + (-t^2p^{2k}) * f''(..) mod p^{k+1}
+            // p^{2k} = 0 mod p^{k+1}
+            // f(r_k) - tp^k * f'(r_k) = 0
+
+            // r_{k+1} = r_k + t * p^k = r_k - f(r_k) / f'(r_k)
+            let r_k = field.wrap_element(self.last_root);
+
+            // f(r_k)
+            let f_r_k = r_k * r_k - field.wrap_element(self.square);
+
+            // f'(r_k)
+            let f_prime_r_k = r_k * field.wrap_element(2);
+
+            // f(r_k) / f'(r_k)
+            let f_div_f_prime = f_prime_r_k.invert() * f_r_k;
+
+            self.last_root = (r_k - f_div_f_prime).to_normal();
+            return Some(self.last_root);
         }
     }
 }
 
-#[test]
-fn bla() {
-    dbg!(binary_power_mod_sqrt(1, 2));
-    dbg!(binary_power_mod_sqrt(16, 6));
+/// For an odd prime, calculate b ** 2 = square mod prime ** k with Hensel lifting
+pub fn odd_prime_power_mod_sqrt(square: u128, prime: u128, exponent: u32) -> u128 {
+    if exponent == 0 {
+        return 0;
+    }
+
+    modulo_square_root::OddPrime::new(square, prime)
+        .nth(exponent as usize - 1)
+        .unwrap()
+}
+
+pub fn binary_power_mod_sqrt(square: u128, exponent: u32) -> Vec<u128> {
+    debug_assert!(is_prime_power_mod_res(square, 2, exponent as u32));
+    if exponent == 0 {
+        return vec![0];
+    }
+
+    modulo_square_root::BinaryModulo::new(square)
+        .nth(exponent as usize - 1)
+        .unwrap()
 }
 
 mod residue_test {
-    fn naive_root(n: u128, p: u128) -> Vec<u128> {
-        (0u128..p).filter(|x| x * x % p == n).collect()
-    }
-
     #[test]
     #[ignore]
-    fn all_binary_roots() {
-        for modulus in [16u128, 32, 64, 128] {
+    fn all_binary_roots_print() {
+        for modulus in [1 << 16] {
             println!("{modulus}");
             let mut map = std::collections::BTreeMap::<u128, Vec<u128>>::new();
             for (square, root) in (0..modulus).map(|x| (x * x % modulus, x)) {
@@ -159,39 +257,22 @@ mod residue_test {
             for (square, roots) in map.iter() {
                 let a: String = roots
                     .iter()
-                    .map(|x| format!("{x:>4}"))
+                    .map(|x| format!("{x:>5}"))
                     .reduce(|a, b| format!("{a}, {b}"))
                     .unwrap();
-                println!("{square:>4}: {a}");
+                println!("{square:>5}: {a}");
             }
             println!();
         }
     }
 }
 
-/// Calculate b ** 2 = square mod prime ** k with Hensel lifting
-pub fn prime_power_mod_sqrt(square: u128, primepower: u128, prime: u128) -> u128 {
-    // Special case square root mod 2, because
-    // the derivative of b * b - square is 2b, which is 0b mod 2, which is zero
-    if prime == 2 {}
-    let mut result = prime_mod_sqrt(square, prime);
-    let mut current_prime_power = prime;
-    while current_prime_power < primepower {
-        current_prime_power *= prime;
-        let field = current_prime_power.setup_field();
-        let wrapped_result = field.wrap_element(result);
-        let f_r_k = wrapped_result * wrapped_result - field.wrap_element(square);
-        let f_prime_r_k = wrapped_result * field.wrap_element(2);
-        let f_prime_r_k_inv = f_prime_r_k.invert();
-        let f_div_f_prime = f_prime_r_k_inv * f_r_k;
-        result = (wrapped_result - f_div_f_prime).to_normal();
-    }
-    result
-}
-
 #[cfg(test)]
 mod test {
-    use super::{eulers_criterion, is_prime_power_mod_res, prime_power_mod_sqrt, tonelli_shanks};
+    use super::{
+        binary_power_mod_sqrt, eulers_criterion, is_prime_power_mod_res, odd_prime_power_mod_sqrt,
+        tonelli_shanks,
+    };
 
     #[test]
     fn test_prime_power() {
@@ -205,8 +286,29 @@ mod test {
             );
         }
 
-        let root = prime_power_mod_sqrt(7, 9 * 9 * 9, 9);
+        let root = odd_prime_power_mod_sqrt(7, 9 * 9 * 9, 9);
         assert_eq!(7, (root * root) % (9 * 9 * 9));
+    }
+
+    #[test]
+    fn all_binary_roots() {
+        for modulus_exp in 0..17 {
+            let modulus = 1 << modulus_exp;
+            let mut total_root_count = 0u128;
+            for i in 0..modulus {
+                if is_prime_power_mod_res(i, 2, modulus.trailing_zeros()) {
+                    for root in binary_power_mod_sqrt(i, modulus.trailing_zeros()) {
+                        assert_eq!(
+                            root.wrapping_mul(root) % modulus,
+                            i,
+                            "{root}**2 != {i} mod {modulus}"
+                        );
+                        total_root_count += 1;
+                    }
+                }
+            }
+            assert_eq!(total_root_count, modulus);
+        }
     }
 
     #[test]

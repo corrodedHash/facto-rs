@@ -87,19 +87,23 @@ fn get_log_approximations(sieve_size: usize, n: u128, primes: &[u32]) -> (Vec<u8
     let try_count_log_underapproximation = usize::MAX.trailing_ones() - sieve_size.trailing_zeros();
     for p in primes.iter().copied().map(u128::from) {
         let p_log_overapproximation = u128::BITS + 1 - p.leading_zeros();
+
         let max_power =
             try_count_log_underapproximation.saturating_sub(2) / p_log_overapproximation;
+
         for p_power in (0..=std::cmp::min(5, max_power)).scan(1, |x, _| {
             *x *= p;
             Some(*x)
         }) {
-            let n_sqrt_mod_p = tonelli_shanks(n % p_power, p_power);
-            let neg_sqrt_mod_p = p_power - n_sqrt_mod_p;
-            let neg_ceil_sq_mod_p = p_power - (ceil_sq % p_power);
 
             // (x + ceil(sqrt(n))) ** 2 - n = 0 mod p
             // => (x + ceil(sqrt(n))) ** 2 = n mod p
             // => x = sqrt(n) - ceil(sqrt(n)) mod p
+            
+            let n_sqrt_mod_p = tonelli_shanks(n % p_power, p_power);
+            let neg_sqrt_mod_p = p_power - n_sqrt_mod_p;
+            let neg_ceil_sq_mod_p = p_power - (ceil_sq % p_power);
+
             let x_neg = (neg_ceil_sq_mod_p + neg_sqrt_mod_p) % p_power;
             let x_pos = (neg_ceil_sq_mod_p + n_sqrt_mod_p) % p_power;
             let start_x = if x_neg == x_pos {
