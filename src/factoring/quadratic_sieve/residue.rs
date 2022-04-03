@@ -121,7 +121,7 @@ pub mod modulo_square_root {
     }
 
     impl BinaryModulo {
-        pub fn new(square: u128) -> Self {
+        pub const fn new(square: u128) -> Self {
             Self {
                 square,
                 current_power: 1,
@@ -175,7 +175,7 @@ pub mod modulo_square_root {
     }
 
     impl OddPrime {
-        pub fn new(square: u128, modulo: u128) -> Self {
+        pub const fn new(square: u128, modulo: u128) -> Self {
             Self {
                 square,
                 modulo,
@@ -217,7 +217,7 @@ pub mod modulo_square_root {
             let f_div_f_prime = f_prime_r_k.invert() * f_r_k;
 
             self.last_root = (r_k - f_div_f_prime).to_normal();
-            return Some(self.last_root);
+            Some(self.last_root)
         }
     }
 }

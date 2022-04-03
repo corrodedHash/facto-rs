@@ -95,11 +95,10 @@ fn get_log_approximations(sieve_size: usize, n: u128, primes: &[u32]) -> (Vec<u8
             *x *= p;
             Some(*x)
         }) {
-
             // (x + ceil(sqrt(n))) ** 2 - n = 0 mod p
             // => (x + ceil(sqrt(n))) ** 2 = n mod p
             // => x = sqrt(n) - ceil(sqrt(n)) mod p
-            
+
             let n_sqrt_mod_p = tonelli_shanks(n % p_power, p_power);
             let neg_sqrt_mod_p = p_power - n_sqrt_mod_p;
             let neg_ceil_sq_mod_p = p_power - (ceil_sq % p_power);
@@ -176,7 +175,7 @@ fn data_collection(n: u128) -> u128 {
     let quad_res_primes: Vec<_> = PrimeIterator::default()
         .filter(|x| residue::is_prime_mod_res(n, *x))
         .take(10_000)
-        .map(|x| x as u32)
+        .map(|x| u32::try_from(x).unwrap())
         .collect();
 
     let relations = gather_relations(n, 100_000, &quad_res_primes);
