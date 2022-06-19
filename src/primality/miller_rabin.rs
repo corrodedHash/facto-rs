@@ -30,6 +30,9 @@ pub trait MillerRabin: Sized {
 
 impl MillerRabin for u64 {
     fn miller_rabin(self, base: Self) -> Result {
+        if self == 1 {
+            return Result::Composite;
+        }
         if self == 2 {
             return Result::MaybePrime;
         }
@@ -66,6 +69,9 @@ impl MillerRabin for u64 {
 
 impl MillerRabin for u128 {
     fn miller_rabin(self, base: Self) -> Result {
+        if self == 1 {
+            return Result::Composite;
+        }
         if self == 2 {
             return Result::MaybePrime;
         }
@@ -102,6 +108,9 @@ impl MillerRabin for u128 {
 
 impl MillerRabin for rug::Integer {
     fn miller_rabin(self, base: Self) -> Result {
+        if self == 1 {
+            return Result::Composite;
+        }
         if self == 2 {
             return Result::MaybePrime;
         }
@@ -168,6 +177,12 @@ mod tests {
         );
         assert_eq!(
             (53u128 * 17).miller_rabin(2),
+            MillerRabinCompositeResult::Composite
+        );
+        assert_eq!(1u64.miller_rabin(2), MillerRabinCompositeResult::Composite);
+        assert_eq!(1u128.miller_rabin(2), MillerRabinCompositeResult::Composite);
+        assert_eq!(
+            rug::Integer::from(1).miller_rabin(rug::Integer::from(2)),
             MillerRabinCompositeResult::Composite
         );
     }
