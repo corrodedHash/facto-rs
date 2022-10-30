@@ -94,6 +94,7 @@ impl TrialDivision for rug::Integer {
             for delta in TEST_DELTA {
                 f.assign(&current_factor + delta);
                 while self.is_divisible(&f){
+                    self /= &f;
                     result.push(f.clone());
                     changed = true;
                 }
