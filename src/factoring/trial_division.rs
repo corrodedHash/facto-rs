@@ -76,17 +76,12 @@ prim_trial_division!(u128);
 impl TrialDivision for rug::Integer {
     fn trial_division(mut self, inclusive_bound: &Self) -> (Vec<Self>, bool) {
         use rug::Assign;
-        const PRE_PRIMES: [u8; 3] = [2u8, 3, 5];
-        const TEST_DELTA: [u8; 2] = [1, 5];
-        const ROUND_INCREMENT: u8 = 6;
+        const PRE_PRIMES: [u32; 3] = [2, 3, 5];
+        const TEST_DELTA: [u32; 2] = [1, 5];
+        const ROUND_INCREMENT: u32 = 6;
         let mut result = vec![];
-        let mut tmp = Self::new();
         for prime in PRE_PRIMES {
-            loop{
-                tmp.assign(&self % prime);
-                if tmp != 0 {
-                    break
-                }
+            while self.is_divisible_u(prime){
                 result.push(prime.into());
                 self /= prime;
             }
@@ -98,11 +93,7 @@ impl TrialDivision for rug::Integer {
             let mut changed = false;
             for delta in TEST_DELTA {
                 f.assign(&current_factor + delta);
-                loop{
-                    tmp.assign(&self % &f);
-                    if tmp != 0 {
-                        break
-                    }
+                while self.is_divisible(&f){
                     result.push(f.clone());
                     changed = true;
                 }
