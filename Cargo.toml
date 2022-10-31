@@ -1,6 +1,6 @@
 [package]
 name = "facto"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2018"
 description = "Integer factorization and prime certification"
 keywords = [ "factorization", "prime", "uint" ]
