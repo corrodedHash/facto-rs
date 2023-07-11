@@ -24,7 +24,7 @@ pub fn cargo_target_directory() -> Option<std::path::PathBuf> {
     }
 
     let output = std::process::Command::new(std::env::var_os("CARGO")?)
-        .args(&["metadata", "--format-version", "1"])
+        .args(["metadata", "--format-version", "1"])
         .output()
         .ok()?;
     let metadata: Metadata = serde_json::from_slice(&output.stdout).ok()?;

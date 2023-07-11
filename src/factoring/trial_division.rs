@@ -81,7 +81,7 @@ impl TrialDivision for rug::Integer {
         const ROUND_INCREMENT: u32 = 6;
         let mut result = vec![];
         for prime in PRE_PRIMES {
-            while self.is_divisible_u(prime){
+            while self.is_divisible_u(prime) {
                 result.push(prime.into());
                 self /= prime;
             }
@@ -93,7 +93,7 @@ impl TrialDivision for rug::Integer {
             let mut changed = false;
             for delta in TEST_DELTA {
                 f.assign(&current_factor + delta);
-                while self.is_divisible(&f){
+                while self.is_divisible(&f) {
                     self /= &f;
                     result.push(f.clone());
                     changed = true;

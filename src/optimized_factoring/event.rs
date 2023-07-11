@@ -64,11 +64,11 @@ where
     To: From<F>,
     F: Clone,
 {
-    pub fn new(inner: Inner) -> Self {
+    pub const fn new(inner: Inner) -> Self {
         Self {
             inner,
-            _phantom_to: std::marker::PhantomData::default(),
-            _phantom_from: std::marker::PhantomData::default(),
+            _phantom_to: std::marker::PhantomData,
+            _phantom_from: std::marker::PhantomData,
         }
     }
 }

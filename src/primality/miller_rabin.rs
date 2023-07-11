@@ -118,9 +118,7 @@ impl MillerRabin for rug::Integer {
             return Result::Composite;
         }
         let n_minus_one: Self = self.clone() - 1;
-        let s = if let Some(x) = n_minus_one.find_one(0) {
-            x
-        } else {
+        let Some(s) = n_minus_one.find_one(0) else {
             // Must be zero, zero is composite (I guess?)
             return Result::Composite;
         };

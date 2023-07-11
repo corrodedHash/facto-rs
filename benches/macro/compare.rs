@@ -1,6 +1,5 @@
 use crate::bench_logger::{BenchmarkGroup, BenchmarkReport};
 
-
 fn log_delta(a: f64, b: f64) -> f64 {
     100f64 * (a / b).ln()
 }

@@ -77,11 +77,12 @@ impl Primality for u128 {
     fn generate_lucas_certificate(self) -> Option<LucasCertificate<Self>> {
         let mut certificate = LucasCertificate::default();
         self.certified_prime_check(PrimalityCertainty::Certified(&mut certificate))
-            .then(|| certificate)
+            .then_some(certificate)
     }
 }
 
 impl Primality for rug::Integer {
+    #[allow(clippy::option_if_let_else)] // Looks clearer this way
     fn is_prime(self) -> bool {
         if let Ok(x) = u64::try_from(self.clone()) {
             x.is_prime()
@@ -95,7 +96,7 @@ impl Primality for rug::Integer {
     fn generate_lucas_certificate(self) -> Option<LucasCertificate<Self>> {
         let mut certificate = LucasCertificate::default();
         self.certified_prime_check(PrimalityCertainty::Certified(&mut certificate))
-            .then(|| certificate)
+            .then_some(certificate)
     }
 }
 
@@ -107,7 +108,7 @@ pub trait CertifiedFactorization: Sized {
     /// use facto::{CertifiedFactorization, PrimalityCertainty};
     /// let mut c = facto::LucasCertificate::default();
     /// let f = 10987081u128.certified_factor(
-    ///     PrimalityCertainty::Certified(&mut c), 
+    ///     PrimalityCertainty::Certified(&mut c),
     ///     facto::EmptyFactoringEventSubscriptor{}
     /// );
     /// assert_eq!(f, vec![7, 107, 14669]);
@@ -155,46 +156,58 @@ fn pollard_loop<T, E>(
 
     let mut composite_factors = vec![composite];
     while let Some(current_factor) = composite_factors.last().cloned() {
+        #[allow(clippy::option_if_let_else)]
         match current_factor
             .clone()
             .pollard_rho(&two, &pollard_rho_increment)
         {
             Some(f) => {
-                composite_factors.pop();
-                let other_factor = current_factor.clone() / f.clone();
-                events.factorized(
+                handle_factor(
                     &current_factor,
-                    &[],
-                    &[],
-                    &[f.clone(), other_factor.clone()],
+                    f,
+                    &mut events,
+                    &mut c,
+                    &mut composite_factors,
+                    prime_factors,
                 );
-                if f.clone()
-                    .certified_prime_check(clone_primality_certainty(&mut c))
-                {
-                    events.is_prime(&f);
-                    prime_factors.push(f);
-                } else {
-                    // FIXME: coreutils/factor uses `pollard_rho_increment + 1` to check this factor
-                    // Maybe we should do too
-                    events.is_composite(&f);
-                    composite_factors.push(f);
-                }
-                if other_factor
-                    .clone()
-                    .certified_prime_check(clone_primality_certainty(&mut c))
-                {
-                    events.is_prime(&other_factor);
-                    prime_factors.push(other_factor);
-                } else {
-                    events.is_composite(&other_factor);
-                    composite_factors.push(other_factor);
-                }
             }
             None => {
                 pollard_rho_increment = pollard_rho_increment + one.clone();
             }
         }
     }
+}
+
+fn handle_factor<T, E>(
+    current_factor: &T,
+    f: T,
+    events: &mut E,
+    c: &mut PrimalityCertainty<'_, T>,
+    composite_factors: &mut Vec<T>,
+    prime_factors: &mut Vec<T>,
+) where
+    T: Clone + PollardRho + Div<Output = T> + CertifiedFactorization + Add<Output = T>,
+    E: FactoringEventSubscriptor<T>,
+{
+    composite_factors.pop();
+    let other_factor = current_factor.clone() / f.clone();
+    events.factorized(current_factor, &[], &[], &[f.clone(), other_factor.clone()]);
+
+    let mut categorize_factor = |f: T| {
+        if f.clone()
+            .certified_prime_check(clone_primality_certainty(c))
+        {
+            events.is_prime(&f);
+            prime_factors.push(f);
+        } else {
+            // FIXME: coreutils/factor uses `pollard_rho_increment + 1` to check this factor
+            // Maybe we should do too
+            events.is_composite(&f);
+            composite_factors.push(f);
+        }
+    };
+    categorize_factor(f);
+    categorize_factor(other_factor);
 }
 
 fn clone_primality_certainty<'a, T>(x: &'a mut PrimalityCertainty<T>) -> PrimalityCertainty<'a, T> {
@@ -252,9 +265,7 @@ impl CertifiedFactorization for u64 {
     }
 
     fn certified_prime_check(self, certificate: PrimalityCertainty<Self>) -> bool {
-        let certificate = if let PrimalityCertainty::Certified(certificate) = certificate {
-            certificate
-        } else {
+        let PrimalityCertainty::Certified(certificate) = certificate else {
             return self.is_prime();
         };
         if certificate.contains(&self) {

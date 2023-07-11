@@ -26,11 +26,10 @@ impl Bench for SemiPrimesU128 {
         ];
         let primes: Vec<u128> = prime_deltas
             .iter()
-            .map(|(e, d)| {
+            .flat_map(|(e, d)| {
                 let power = 1u128 << e;
                 d.iter().map(|x| power - x).collect::<Vec<u128>>()
             })
-            .flatten()
             .collect();
         let mut composites = vec![];
         for i in 0..(primes.len() - 1) {

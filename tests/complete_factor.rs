@@ -49,7 +49,7 @@ where
                 "Certificate does not certify factor {}",
                 ef_rug
             );
-            assert_eq!(mn.clone() % &ef_rug, 0, "{} % {}", mn, ef_rug);
+            assert_eq!(mn.clone() % &ef_rug, 0, "{mn} % {ef_rug}");
             while mn.clone() % &ef_rug == 0 {
                 mn /= &ef_rug;
             }

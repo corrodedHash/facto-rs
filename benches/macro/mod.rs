@@ -119,7 +119,6 @@ fn create_bench() {
     };
     if let Some(lb) = last_benchmark_path {
         compare::compare(lb.to_str().unwrap(), benchmark_path.to_str().unwrap());
-    } else {
     }
 }
 

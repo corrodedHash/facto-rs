@@ -1,6 +1,6 @@
 use std::{convert::TryFrom, marker::PhantomData};
 
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 /// Element of the lucas certificate tree, representing one number
 pub struct LucasCertificateElement<T> {
     /// The factor being certified to be prime
@@ -31,12 +31,14 @@ pub trait LucasCertificateTrait<T>: std::fmt::Debug {
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
-pub struct WrappingLucasCertificate<'a, F, T> {
-    wrapped: &'a mut dyn LucasCertificateTrait<T>,
-    _phantom_from: PhantomData<F>,
+pub struct WrappingLucasCertificate<'a, OutputType, WrappedType> {
+    wrapped: &'a mut dyn LucasCertificateTrait<WrappedType>,
+    _phantom_from: PhantomData<OutputType>,
 }
 
-fn change_element<F, T: From<F>>(c: LucasCertificateElement<F>) -> LucasCertificateElement<T> {
+fn change_element<OutputType, WrappedType: From<OutputType>>(
+    c: LucasCertificateElement<OutputType>,
+) -> LucasCertificateElement<WrappedType> {
     LucasCertificateElement {
         n: c.n.into(),
         base: c.base.into(),
@@ -48,14 +50,15 @@ fn change_element<F, T: From<F>>(c: LucasCertificateElement<F>) -> LucasCertific
     }
 }
 
-impl<'a, F, T> From<&'a mut dyn LucasCertificateTrait<F>> for WrappingLucasCertificate<'a, T, F>
+impl<'a, FromType, ToType> From<&'a mut dyn LucasCertificateTrait<FromType>>
+    for WrappingLucasCertificate<'a, ToType, FromType>
 where
-    F: Ord + Clone + std::fmt::Debug,
+    FromType: Ord + Clone + std::fmt::Debug,
 {
-    fn from(x: &'a mut dyn LucasCertificateTrait<F>) -> Self {
+    fn from(x: &'a mut dyn LucasCertificateTrait<FromType>) -> Self {
         WrappingLucasCertificate {
             wrapped: x,
-            _phantom_from: PhantomData::default(),
+            _phantom_from: PhantomData,
         }
     }
 }
@@ -91,12 +94,10 @@ where
     }
 }
 
-impl<T: Eq + Ord + Clone> LucasCertificateTrait<T> for LucasCertificate<T>
-where
-    T: std::fmt::Debug,
-{
+impl<T: Eq + Ord + Clone + std::fmt::Debug> LucasCertificateTrait<T> for LucasCertificate<T> {
     fn push(&mut self, e: LucasCertificateElement<T>) {
-        match (&self.elements)
+        match self
+            .elements
             .binary_search_by_key(&e.n, |x: &LucasCertificateElement<T>| x.n.clone())
         {
             Ok(_) => (),
