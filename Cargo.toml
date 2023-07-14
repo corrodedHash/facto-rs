@@ -10,10 +10,10 @@ license = "MIT OR Apache-2.0"
 authors = [ "Lukas Wölfer <lukas.woelfer@rwth-aachen.de>" ]
 
 [dependencies]
-num-integer = "0.1.44"
-num-traits = "0.2.14"
+num-integer = "0.1.45"
+num-traits = "0.2.15"
 redc = "0.1.0"
-rug = "1.13.0"
+rug = { version="1.19.2", features = [ "num-traits" ]}
 twoword = "0.1.0"
 
 [dev-dependencies]

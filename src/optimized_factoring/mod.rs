@@ -376,22 +376,9 @@ impl CertifiedFactorization for u128 {
     }
 
     fn certified_prime_check(self, mut certificate: PrimalityCertainty<Self>) -> bool {
-        if self % 2 == 0 {
-            return if self == 2 {
-                if let PrimalityCertainty::Certified(certificate) = certificate {
-                    if !certificate.contains(&self) {
-                        certificate.push(LucasCertificateElement {
-                            n: self,
-                            base: 1,
-                            unique_prime_divisors: vec![1],
-                        });
-                    }
-                }
-                true
-            } else {
-                false
-            };
-        };
+        if let Some(x) = check_two(&self, clone_primality_certainty(&mut certificate)) {
+            return x;
+        }
 
         if let Ok(x) = u64::try_from(self) {
             let mut o;
@@ -492,22 +479,9 @@ impl CertifiedFactorization for rug::Integer {
     }
 
     fn certified_prime_check(self, mut certificate: PrimalityCertainty<Self>) -> bool {
-        if self.clone() % 2 == 0 {
-            return if self == 2 {
-                if let PrimalityCertainty::Certified(certificate) = certificate {
-                    if !certificate.contains(&self) {
-                        certificate.push(LucasCertificateElement {
-                            n: self,
-                            base: 1.into(),
-                            unique_prime_divisors: vec![1.into()],
-                        });
-                    }
-                }
-                true
-            } else {
-                false
-            };
-        };
+        if let Some(x) = check_two(&self, clone_primality_certainty(&mut certificate)) {
+            return x;
+        }
 
         if let Some(x) = self.to_u128() {
             let mut o;
@@ -540,6 +514,35 @@ impl CertifiedFactorization for rug::Integer {
             |x| *x += 1,
         )
     }
+}
+
+fn check_two<T>(n: &T, certificate: PrimalityCertainty<T>) -> Option<bool>
+where
+    T: std::ops::Rem
+        + std::ops::Add
+        + num_traits::One
+        + num_traits::Zero
+        + Clone
+        + std::cmp::PartialEq,
+    <T as std::ops::Rem>::Output: std::cmp::PartialEq<T>,
+{
+    let two = T::one() + T::one();
+    if (n.clone() % two.clone()) != T::zero() {
+        return None;
+    }
+    if n != &two {
+        return Some(false);
+    }
+    if let PrimalityCertainty::Certified(certificate) = certificate {
+        if !certificate.contains(n) {
+            certificate.push(LucasCertificateElement {
+                n: n.clone(),
+                base: T::one(),
+                unique_prime_divisors: vec![T::one()],
+            });
+        }
+    }
+    Some(true)
 }
 
 fn miller_lucas_loop<T, IncFn>(
