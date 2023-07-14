@@ -321,16 +321,19 @@ impl CertifiedFactorization for u128 {
         const TRIAL_THRESHHOLD: u128 = (1 << 12) - 1;
 
         if let Ok(x) = u64::try_from(self) {
-            let mut o;
-            let w_c = match certificate {
+            let mut wrapping_cert_buffer;
+            let wrapping_certificate = match certificate {
                 PrimalityCertainty::Guaranteed => PrimalityCertainty::Guaranteed,
                 PrimalityCertainty::Certified(p) => {
-                    o = Some(WrappingLucasCertificate::<u64, Self>::from(p));
-                    PrimalityCertainty::Certified(o.as_mut().unwrap())
+                    wrapping_cert_buffer = Some(WrappingLucasCertificate::<u64, Self>::from(p));
+                    PrimalityCertainty::Certified(wrapping_cert_buffer.as_mut().unwrap())
                 }
             };
-            let r = x.certified_factor(w_c, WrappingFactoringEventSubscriptor::new(events));
-            return r.into_iter().map(Self::from).collect();
+            let factoring_result = x.certified_factor(
+                wrapping_certificate,
+                WrappingFactoringEventSubscriptor::new(events),
+            );
+            return factoring_result.into_iter().map(Self::from).collect();
         }
 
         let (mut pre_processed, exhaustive) = self.trial_division(&TRIAL_THRESHHOLD);
