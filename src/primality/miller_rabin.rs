@@ -36,7 +36,7 @@ impl MillerRabin for u64 {
         if self == 2 {
             return Result::MaybePrime;
         }
-        if self % 2 == 0 {
+        if self.is_multiple_of(2) {
             return Result::Composite;
         }
         let n_minus_one = self - 1;
@@ -75,7 +75,7 @@ impl MillerRabin for u128 {
         if self == 2 {
             return Result::MaybePrime;
         }
-        if self % 2 == 0 {
+        if self.is_multiple_of(2) {
             return Result::Composite;
         }
         let n_minus_one = self - 1;

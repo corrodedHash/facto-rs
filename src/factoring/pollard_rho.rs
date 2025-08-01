@@ -30,11 +30,7 @@ struct PollardRhoCycleConditionCheckerU64 {
 
 impl super::brent_cycle::CycleConditionChecker<u64, u64> for PollardRhoCycleConditionCheckerU64 {
     fn check(&mut self, tortoise: &u64, hare: &u64, count: &u64, power: &u64) -> bool {
-        let diff = if hare > tortoise {
-            hare - tortoise
-        } else {
-            tortoise - hare
-        };
+        let diff = hare.abs_diff(*tortoise);
         self.accum = self.field.redc(u128::from(self.accum) * u128::from(diff));
         self.last_tortoise = *tortoise;
         debug_assert_eq!(power.count_ones(), 1);
@@ -64,11 +60,7 @@ impl PollardRhoCycleConditionCheckerU64 {
     fn extract(self, mut f: PollardRhoMapperU64) -> u64 {
         let mut hare = super::brent_cycle::MapFunction::run(&mut f, self.last_hare);
         loop {
-            let x_minus_y_abs = if hare > self.last_tortoise {
-                hare - self.last_tortoise
-            } else {
-                self.last_tortoise - hare
-            };
+            let x_minus_y_abs = hare.abs_diff(self.last_tortoise);
             let d = u64::gcd(x_minus_y_abs.to_normal(&self.field), self.n);
             if d != 1 {
                 return d;
@@ -97,11 +89,7 @@ struct PollardRhoCycleConditionCheckerU128 {
 impl super::brent_cycle::CycleConditionChecker<u128, u128> for PollardRhoCycleConditionCheckerU128 {
     #[inline]
     fn check(&mut self, tortoise: &u128, hare: &u128, count: &u128, power: &u128) -> bool {
-        let diff = if hare > tortoise {
-            hare - tortoise
-        } else {
-            tortoise - hare
-        };
+        let diff = hare.abs_diff(*tortoise);
         self.accum = self.field.redc(TwoWord::mult(self.accum, diff));
         self.last_tortoise = *tortoise;
         debug_assert_eq!(power.count_ones(), 1);
@@ -131,11 +119,7 @@ impl PollardRhoCycleConditionCheckerU128 {
     fn extract(self, mut f: PollardRhoMapperU128) -> u128 {
         let mut hare = super::brent_cycle::MapFunction::run(&mut f, self.last_hare);
         loop {
-            let x_minus_y_abs = if hare > self.last_tortoise {
-                hare - self.last_tortoise
-            } else {
-                self.last_tortoise - hare
-            };
+            let x_minus_y_abs = hare.abs_diff(self.last_tortoise);
             let d = u128::gcd(x_minus_y_abs.to_normal(&self.field), self.n);
             if d != 1 {
                 return d;

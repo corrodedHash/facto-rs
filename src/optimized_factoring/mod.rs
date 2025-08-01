@@ -280,7 +280,7 @@ impl CertifiedFactorization for u64 {
                 });
             }
             return true;
-        };
+        }
         if !self.is_prime() {
             return false;
         }
@@ -463,7 +463,7 @@ impl CertifiedFactorization for rug::Integer {
         let mut prime_factors = pre_processed;
 
         if !prime_factors.is_empty() {
-            events.factorized(&self, &prime_factors, &[composite_factor.clone()], &[]);
+            events.factorized(&self, &prime_factors, std::slice::from_ref(&composite_factor), &[]);
         }
 
         pollard_loop(
@@ -560,7 +560,7 @@ where
         match n.clone().miller_rabin(start_base.clone()) {
             MillerRabinCompositeResult::Composite => return false,
             MillerRabinCompositeResult::MaybePrime => (),
-        };
+        }
         match n.clone().lucas_primality_test(factors, start_base.clone()) {
             LucasPrimalityResult::Prime => {
                 if let PrimalityCertainty::Certified(ref mut certificate) = c {

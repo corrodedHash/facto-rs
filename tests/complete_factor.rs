@@ -116,7 +116,7 @@ fn random_test_u64() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "Takes too long"]
 fn random_test_u128() {
     let mut state = get_rand_gen();
     let threshold = rug::Integer::u_pow_u(2, 128).complete();
@@ -147,7 +147,7 @@ fn random_test_u128_smooth() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "Takes too long"]
 fn random_test_rug() {
     let mut state = get_rand_gen();
     let threshold = rug::Integer::u_pow_u(2, 140).complete();
