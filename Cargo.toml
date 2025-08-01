@@ -10,16 +10,17 @@ license = "MIT OR Apache-2.0"
 authors = [ "Lukas Wölfer <lukas.woelfer@rwth-aachen.de>" ]
 
 [dependencies]
-num-integer = "0.1.45"
-num-traits = "0.2.15"
+num-integer = "0.1.46"
+num-traits = "0.2.19"
 redc = "0.1.0"
-rug = { version="1.19.2", features = [ "num-traits" ]}
+rug = { version = "1.27.0", features = ["integer", "num-traits", "std"], default-features = false }
 twoword = "0.1.0"
 
 [dev-dependencies]
+criterion = "0.4.0"
+rug = { version = "1.27.0", features = ["integer", "num-traits", "std", "rand"], default-features = false }
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"
-criterion = "0.4.0"
 
 [profile.release]
 lto = "fat"
